@@ -56,4 +56,5 @@ GPL v3
 
 ## Author
 
-Your Name (your.email@example.com)
+Mirjan Ali Sha (mastools.help@gmail.com)
+
