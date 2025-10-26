@@ -18,10 +18,11 @@ Browse and access satellite imagery from multiple STAC providers directly in QGI
 Install Open-Geodata-API in your QGIS Python environment:
 
 From QGIS Python Console
+```
 import subprocess
 import sys
 subprocess.check_call([sys.executable, "-m", "pip", "install", "open-geodata-api"])
-
+```
 
 ### Plugin Installation
 
@@ -57,4 +58,5 @@ GPL v3
 ## Author
 
 Mirjan Ali Sha (mastools.help@gmail.com)
+
 
