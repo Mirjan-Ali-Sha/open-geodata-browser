@@ -7,7 +7,7 @@ from qgis.PyQt.QtCore import Qt, QDate, pyqtSignal
 from qgis.PyQt.QtWidgets import (QDialog, QMessageBox, QTableWidgetItem, 
                                   QProgressDialog, QFileDialog, QHeaderView,
                                   QCheckBox, QWidget, QHBoxLayout, QVBoxLayout,
-                                  QSplitter)
+                                  QPushButton, QSplitter)
 from qgis.core import (QgsMessageLog, Qgis, QgsRectangle, QgsProject,
                         QgsCoordinateReferenceSystem, QgsCoordinateTransform,
                         QgsVectorLayer, QgsFeature, QgsGeometry, QgsPointXY,
@@ -45,6 +45,7 @@ class GeodataBrowserDialog(QDialog, FORM_CLASS):
         # Data storage
         self.current_items = []
         self.selected_item = None
+        self.selected_items = []
         self.current_item_assets = []
         
         # Map preview components
@@ -58,6 +59,7 @@ class GeodataBrowserDialog(QDialog, FORM_CLASS):
         
         # Setup UI
         self.setup_ui()
+        self.setup_asset_controls()
         self.setup_preview_map()
         self.connect_signals()
         
@@ -101,8 +103,72 @@ class GeodataBrowserDialog(QDialog, FORM_CLASS):
         # Set default download path
         self.downloadPathEdit.setText(os.path.expanduser('~'))
 
+    def setup_asset_controls(self):
+        """Setup Select All/Unselect All controls in Assets tab"""
+        # Get the Assets tab widget
+        assets_tab = self.tabWidget.widget(2)
+        
+        # Get the existing layout
+        layout = assets_tab.layout()
+        if not layout:
+            layout = QVBoxLayout(assets_tab)
+        
+        # Create control buttons container
+        control_container = QWidget()
+        control_layout = QHBoxLayout(control_container)
+        control_layout.setContentsMargins(5, 5, 5, 5)
+        control_layout.setSpacing(10)
+        
+        # Add Select All button
+        self.selectAllButton = QPushButton('Select All')
+        self.selectAllButton.clicked.connect(self.select_all_assets)
+        control_layout.addWidget(self.selectAllButton)
+        
+        # Add Unselect All button
+        self.unselectAllButton = QPushButton('Unselect All')
+        self.unselectAllButton.clicked.connect(self.unselect_all_assets)
+        control_layout.addWidget(self.unselectAllButton)
+        
+        # Add spacer
+        control_layout.addStretch()
+        
+        # Insert before the assets table
+        # Find the position of itemIdLabel
+        for i in range(layout.count()):
+            widget = layout.itemAt(i).widget()
+            if widget and hasattr(widget, 'text') and 'Item ID' in widget.text():
+                layout.insertWidget(i + 1, control_container)
+                break
+
+    def select_all_assets(self):
+        """Select all visible assets in the table"""
+        count = 0
+        for row in range(self.assetsTable.rowCount()):
+            if not self.assetsTable.isRowHidden(row):
+                checkbox_widget = self.assetsTable.cellWidget(row, 0)
+                if checkbox_widget:
+                    checkbox = checkbox_widget.findChild(QCheckBox)
+                    if checkbox:
+                        checkbox.setChecked(True)
+                        count += 1
+        
+        self.log_message(f'Selected {count} assets', Qgis.Info)
+
+    def unselect_all_assets(self):
+        """Unselect all assets in the table"""
+        count = 0
+        for row in range(self.assetsTable.rowCount()):
+            checkbox_widget = self.assetsTable.cellWidget(row, 0)
+            if checkbox_widget:
+                checkbox = checkbox_widget.findChild(QCheckBox)
+                if checkbox:
+                    checkbox.setChecked(False)
+                    count += 1
+        
+        self.log_message(f'Unselected {count} assets', Qgis.Info)
+
     def setup_preview_map(self):
-        """Setup map preview canvas in Results tab - CORRECTED"""
+        """Setup map preview canvas in Results tab"""
         # Get the Results tab widget
         results_tab = self.tabWidget.widget(1)
         
@@ -136,7 +202,6 @@ class GeodataBrowserDialog(QDialog, FORM_CLASS):
         
         # Add basemap layer (Google Satellite)
         self.add_basemap()
-
 
     def add_basemap(self):
         """Add Google Satellite basemap to preview canvas"""
@@ -535,78 +600,106 @@ class GeodataBrowserDialog(QDialog, FORM_CLASS):
             self.log_message(f'Error updating selection: {str(e)}', Qgis.Warning)
 
     def load_selected_item(self):
-        """Load selected item's assets to Assets tab"""
-        selected_rows = self.resultsTable.selectedItems()
+        """Load selected items' assets to Assets tab - supports multiple selection"""
+        # Get all selected rows
+        selected_items = self.resultsTable.selectionModel().selectedRows()
+        
+        if not selected_items:
+            self.show_warning('Please select at least one item from the results')
+            return
+        
+        # Get unique row indices
+        selected_rows = sorted(set(item.row() for item in selected_items))
+        
         if not selected_rows:
-            self.show_warning('Please select an item from the results')
             return
         
-        row = self.resultsTable.currentRow()
-        if row < 0 or row >= len(self.current_items):
+        # Collect all selected items
+        selected_item_objects = []
+        for row in selected_rows:
+            if 0 <= row < len(self.current_items):
+                selected_item_objects.append(self.current_items[row])
+        
+        if not selected_item_objects:
             return
         
-        self.selected_item = self.current_items[row]
-        self.display_assets(self.selected_item)
+        # Store selected items (for download functionality)
+        self.selected_items = selected_item_objects
         
+        # Display assets from all selected items
+        self.display_multiple_items_assets(selected_item_objects)
+        
+        # Switch to assets tab
         self.tabWidget.setCurrentIndex(2)
 
-    def display_assets(self, item):
-        """Display assets for selected item with checkboxes and Item ID"""
+    def display_multiple_items_assets(self, items):
+        """Display assets for multiple selected items with Item ID grouping"""
         self.assetsTable.setRowCount(0)
         self.current_item_assets = []
         
-        self.itemIdLabel.setText(f'Item ID: {item.id}')
+        # Update label to show multiple items
+        if len(items) == 1:
+            self.itemIdLabel.setText(f'Item ID: {items[0].id}')
+        else:
+            self.itemIdLabel.setText(f'Selected Items: {len(items)} items')
         
-        if not hasattr(item, 'assets'):
-            return
-        
-        for asset_key, asset in item.assets.items():
-            href = asset.href if hasattr(asset, 'href') else ''
-            extension = os.path.splitext(href)[1] if href else 'N/A'
+        # Process each item
+        for item in items:
+            if not hasattr(item, 'assets'):
+                continue
             
-            self.current_item_assets.append({
-                'key': asset_key,
-                'asset': asset,
-                'extension': extension,
-                'item': item
-            })
-            
-            row = self.assetsTable.rowCount()
-            self.assetsTable.insertRow(row)
-            
-            # Checkbox
-            checkbox = QCheckBox()
-            checkbox.setChecked(True)
-            checkbox_widget = QWidget()
-            checkbox_layout = QHBoxLayout(checkbox_widget)
-            checkbox_layout.addWidget(checkbox)
-            checkbox_layout.setAlignment(Qt.AlignCenter)
-            checkbox_layout.setContentsMargins(0, 0, 0, 0)
-            self.assetsTable.setCellWidget(row, 0, checkbox_widget)
-            
-            # ID
-            id_item = QTableWidgetItem(item.id)
-            id_item.setFlags(id_item.flags() & ~Qt.ItemIsEditable)
-            self.assetsTable.setItem(row, 1, id_item)
-            
-            # Asset Name
-            self.assetsTable.setItem(row, 2, QTableWidgetItem(asset_key))
-            
-            # Type
-            asset_type = asset.media_type if hasattr(asset, 'media_type') else 'N/A'
-            self.assetsTable.setItem(row, 3, QTableWidgetItem(asset_type))
-            
-            # Size
-            size = 'N/A'
-            if hasattr(asset, 'extra_fields') and 'file:size' in asset.extra_fields:
-                size_bytes = asset.extra_fields['file:size']
-                size = self.format_file_size(size_bytes)
-            self.assetsTable.setItem(row, 4, QTableWidgetItem(size))
-            
-            # Extension
-            self.assetsTable.setItem(row, 5, QTableWidgetItem(extension))
+            # Add assets from this item
+            for asset_key, asset in item.assets.items():
+                href = asset.href if hasattr(asset, 'href') else ''
+                extension = os.path.splitext(href)[1] if href else 'N/A'
+                
+                self.current_item_assets.append({
+                    'key': asset_key,
+                    'asset': asset,
+                    'extension': extension,
+                    'item': item
+                })
+                
+                row = self.assetsTable.rowCount()
+                self.assetsTable.insertRow(row)
+                
+                # Column 0: Checkbox
+                checkbox = QCheckBox()
+                checkbox.setChecked(True)
+                checkbox_widget = QWidget()
+                checkbox_layout = QHBoxLayout(checkbox_widget)
+                checkbox_layout.addWidget(checkbox)
+                checkbox_layout.setAlignment(Qt.AlignCenter)
+                checkbox_layout.setContentsMargins(0, 0, 0, 0)
+                self.assetsTable.setCellWidget(row, 0, checkbox_widget)
+                
+                # Column 1: Item ID
+                id_item = QTableWidgetItem(item.id)
+                id_item.setFlags(id_item.flags() & ~Qt.ItemIsEditable)
+                self.assetsTable.setItem(row, 1, id_item)
+                
+                # Column 2: Asset Name
+                self.assetsTable.setItem(row, 2, QTableWidgetItem(asset_key))
+                
+                # Column 3: Type
+                asset_type = asset.media_type if hasattr(asset, 'media_type') else 'N/A'
+                self.assetsTable.setItem(row, 3, QTableWidgetItem(asset_type))
+                
+                # Column 4: Size
+                size = 'N/A'
+                if hasattr(asset, 'extra_fields') and 'file:size' in asset.extra_fields:
+                    size_bytes = asset.extra_fields['file:size']
+                    size = self.format_file_size(size_bytes)
+                self.assetsTable.setItem(row, 4, QTableWidgetItem(size))
+                
+                # Column 5: Extension
+                self.assetsTable.setItem(row, 5, QTableWidgetItem(extension))
         
         self.filter_assets_by_type()
+        
+        # Log success
+        total_assets = self.assetsTable.rowCount()
+        self.log_message(f'Loaded {total_assets} assets from {len(items)} item(s)', Qgis.Info)
 
     def filter_assets_by_type(self):
         """Filter assets table by selected file type"""
@@ -650,10 +743,6 @@ class GeodataBrowserDialog(QDialog, FORM_CLASS):
 
     def load_selected_assets(self):
         """Load selected assets as QGIS layers"""
-        if not self.selected_item:
-            self.show_warning('Please select an item first')
-            return
-        
         selected_assets = self.get_selected_assets()
         
         if not selected_assets:
@@ -708,10 +797,6 @@ class GeodataBrowserDialog(QDialog, FORM_CLASS):
 
     def _download_assets(self, structured=False):
         """Download assets with structure: <ID>/<AssetName>.<ext>"""
-        if not self.selected_item:
-            self.show_warning('Please select an item first')
-            return
-        
         selected_assets = self.get_selected_assets()
         
         if not selected_assets:
@@ -730,43 +815,60 @@ class GeodataBrowserDialog(QDialog, FORM_CLASS):
             
             downloaded = 0
             
-            if structured:
-                item_folder = os.path.join(download_path, self.selected_item.id)
-                os.makedirs(item_folder, exist_ok=True)
-                base_path = item_folder
-            else:
-                base_path = download_path
+            # Group assets by item ID
+            assets_by_item = {}
+            for asset_info in selected_assets:
+                item_id = asset_info['item'].id
+                if item_id not in assets_by_item:
+                    assets_by_item[item_id] = []
+                assets_by_item[item_id].append(asset_info)
             
-            for i, asset_info in enumerate(selected_assets):
+            asset_index = 0
+            for item_id, item_assets in assets_by_item.items():
+                # Create item folder if structured
+                if structured:
+                    item_folder = os.path.join(download_path, item_id)
+                    os.makedirs(item_folder, exist_ok=True)
+                    base_path = item_folder
+                else:
+                    base_path = download_path
+                
+                # Download assets for this item
+                for asset_info in item_assets:
+                    if progress.wasCanceled():
+                        break
+                    
+                    progress.setValue(asset_index)
+                    progress.setLabelText(f'Downloading {item_id}/{asset_info["key"]}...')
+                    
+                    try:
+                        asset = asset_info['asset']
+                        extension = asset_info['extension']
+                        asset_name = asset_info['key']
+                        
+                        if extension and extension != 'N/A':
+                            filename = f'{asset_name}{extension}'
+                        else:
+                            href = asset.href if hasattr(asset, 'href') else ''
+                            ext_from_url = os.path.splitext(href)[1]
+                            filename = f'{asset_name}{ext_from_url}' if ext_from_url else asset_name
+                        
+                        filepath = os.path.join(base_path, filename)
+                        
+                        self.stac_client.download_asset(asset, filepath)
+                        downloaded += 1
+                        
+                    except Exception as e:
+                        self.log_message(f'Failed to download {asset_info["key"]}: {str(e)}', Qgis.Warning)
+                    
+                    asset_index += 1
+                
                 if progress.wasCanceled():
                     break
-                
-                progress.setValue(i)
-                progress.setLabelText(f'Downloading {asset_info["key"]}...')
-                
-                try:
-                    asset = asset_info['asset']
-                    extension = asset_info['extension']
-                    asset_name = asset_info['key']
-                    
-                    if extension and extension != 'N/A':
-                        filename = f'{asset_name}{extension}'
-                    else:
-                        href = asset.href if hasattr(asset, 'href') else ''
-                        ext_from_url = os.path.splitext(href)[1]
-                        filename = f'{asset_name}{ext_from_url}' if ext_from_url else asset_name
-                    
-                    filepath = os.path.join(base_path, filename)
-                    
-                    self.stac_client.download_asset(asset, filepath)
-                    downloaded += 1
-                    
-                except Exception as e:
-                    self.log_message(f'Failed to download {asset_info["key"]}: {str(e)}', Qgis.Warning)
             
             progress.setValue(len(selected_assets))
             
-            self.show_info(f'Successfully downloaded {downloaded}/{len(selected_assets)} assets\n\nLocation: {base_path}')
+            self.show_info(f'Successfully downloaded {downloaded}/{len(selected_assets)} assets\n\nLocation: {download_path}')
             
         except Exception as e:
             self.show_error(f'Download failed: {str(e)}')
