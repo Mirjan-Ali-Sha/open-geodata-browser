@@ -1,0 +1,39 @@
+[general]
+name=Open Geodata Browser
+qgisMinimumVersion=3.0
+qgisMaximumVersion=3.99
+description=Browse and access satellite imagery from multiple providers using Open-Geodata-API
+version=1.0.0
+author=Mirjan Ali Sha
+email=mastools.help@gmail.com
+
+about=Open Geodata Browser provides seamless access to Microsoft Planetary Computer and AWS EarthSearch satellite data catalogs. Search, filter, and load Cloud-Optimized GeoTIFFs directly into QGIS. Features include multi-provider comparison, advanced filtering, batch downloads, and automatic URL signing.
+
+tracker=https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues
+repository=https://github.com/Mirjan-Ali-Sha/open-geodata-browser
+homepage=https://github.com/Mirjan-Ali-Sha/open-geodata-browser/wiki
+
+tags=satellite,stac,remote sensing,imagery,raster,planetary computer,earthsearch,cloud,cog
+
+category=Raster
+
+icon=resources/icon.png
+
+experimental=False
+deprecated=False
+
+changelog=
+    1.0.0 - Initial release
+    - Multi-provider search (Planetary Computer & EarthSearch)
+    - Advanced filtering (cloud cover, date range, bbox)
+    - Direct COG loading to QGIS
+    - Batch download capabilities
+    - Asset preview and management
+
+hasProcessingProvider=no
+
+# Python package dependencies
+plugin_dependencies=
+
+# External dependencies (users need to install manually or via pip)
+# open-geodata-api>=1.0.0

@@ -1,0 +1,4 @@
+open-geodata-api>=1.0.0
+geopandas>=0.12.0
+rioxarray>=0.13.0
+planetary-computer>=0.4.0
