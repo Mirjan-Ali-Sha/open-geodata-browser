@@ -47,9 +47,6 @@ subprocess.check_call([sys.executable, "-m", "pip", "install", "open-geodata-api
 - QGIS >= 3.0
 - Python packages:
   - open-geodata-api >= 1.0.0
-  - geopandas >= 0.12.0
-  - rioxarray >= 0.13.0
-  - planetary-computer >= 0.4.0
 
 ## License
 
@@ -58,5 +55,6 @@ GPL v3
 ## Author
 
 Mirjan Ali Sha (mastools.help@gmail.com)
+
 
 
