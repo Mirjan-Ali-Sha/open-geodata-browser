@@ -26,7 +26,7 @@ From QGIS Python Console
 
 ```
 from pip._internal.main import main as pip_main
-result = pip_main(['install', '--user', '--upgrade', 'open-geodata-api'])
+pip_main(['install', '--user', '--upgrade', 'open-geodata-api'])
 ```
 
 ### Plugin Installation
@@ -60,4 +60,5 @@ GPL v3
 ## Author
 
 Mirjan Ali Sha (mastools.help@gmail.com)
+
 
