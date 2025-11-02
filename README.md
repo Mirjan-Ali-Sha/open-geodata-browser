@@ -15,7 +15,7 @@ Browse and access satellite imagery from multiple STAC providers directly in QGI
 
 ### Prerequisites
 
-Install Open-Geodata-API in your QGIS Python environment:
+Install Open-Geodata-API in your QGIS Python environment:<br>
 Using OSGeo4W Shell (Windows)
 
 ```
@@ -60,3 +60,4 @@ GPL v3
 ## Author
 
 Mirjan Ali Sha (mastools.help@gmail.com)
+
