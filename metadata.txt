@@ -20,7 +20,7 @@ about=Open Geodata Browser is a powerful QGIS plugin for accessing satellite ima
     QUICK START:
     ============
     1. Open: Raster > Open Geodata Browser
-    2. Select STAC provider (Planetary Computer, Sentinel Hub, NASA EOSDIS)
+    2. Select STAC provider (Planetary Computer, AWS Earth Search, Sentinel Hub, NASA EOSDIS)
     3. Draw area or import vector layer as AOI
     4. Set date range and cloud cover filter
     5. Click Search
@@ -65,3 +65,4 @@ changelog=
     - Asset management and preview
     - Interactive map visualization
     - Connection management for custom endpoints
+
