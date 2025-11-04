@@ -37,7 +37,7 @@
 
 ## ✨ Features
 
-- 🛰️ **Multi-Provider Support** - Access Planetary Computer, Sentinel Hub, NASA EOSDIS, and custom STAC catalogs
+- 🛰️ **Multi-Provider Support** - Access Planetary Computer, EarthSearch Element84, Sentinel Hub, NASA EOSDIS, and custom STAC catalogs
 - 🔍 **Advanced Search** - Spatial-temporal filtering with cloud coverage detection
 - 📦 **Cloud-Optimized GeoTIFFs** - Direct COG access with efficient streaming
 - ⬇️ **Batch Download** - Download multiple images in one operation
@@ -483,5 +483,6 @@ GNUv3 License - see [LICENSE](LICENSE) file
 [Report Bug](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Request Feature](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Documentation](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/wiki)
 
 </div>
+
 
 
