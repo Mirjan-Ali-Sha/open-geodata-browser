@@ -454,7 +454,7 @@ Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## 📜 License
 
-MIT License - see [LICENSE](LICENSE) file
+GNUv3 License - see [LICENSE](LICENSE) file
 
 ---
 
@@ -483,3 +483,4 @@ MIT License - see [LICENSE](LICENSE) file
 [Report Bug](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Request Feature](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Documentation](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/wiki)
 
 </div>
+
