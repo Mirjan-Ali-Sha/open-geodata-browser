@@ -4,7 +4,7 @@
 
 [![QGIS](https://img.shields.io/badge/QGIS-3.28%2B-green.svg)](https://qgis.org)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://python.org)
-[![License](https://img.shields.io/badge/License-MIT-orange.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-GNUv3-orange.svg)](LICENSE)
 [![GitHub](https://img.shields.io/github/stars/Mirjan-Ali-Sha/open-geodata-browser?style=social)](https://github.com/Mirjan-Ali-Sha/open-geodata-browser)
 
 **Browse and access satellite imagery from multiple STAC providers directly in QGIS**
@@ -483,6 +483,7 @@ GNUv3 License - see [LICENSE](LICENSE) file
 [Report Bug](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Request Feature](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Documentation](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/wiki)
 
 </div>
+
 
 
 
