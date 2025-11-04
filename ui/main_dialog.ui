@@ -1,354 +1,522 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>GeodataBrowserDialogBase</class>
- <widget class="QDialog" name="GeodataBrowserDialogBase">
+ <class>GeodataBrowserDialog</class>
+ 
+ <!-- Main Dialog Window -->
+ <widget class="QDialog" name="GeodataBrowserDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
-    <height>750</height>
+    <width>900</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Open Geodata Browser</string>
   </property>
+  
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
+    <!-- Main Tab Widget -->
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
       <number>0</number>
      </property>
+     
+     <!-- ========================================== -->
+     <!-- TAB 1: SEARCH -->
+     <!-- ========================================== -->
      <widget class="QWidget" name="searchTab">
       <attribute name="title">
        <string>Search</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+      <layout class="QVBoxLayout" name="searchLayout">
+       
+       <!-- Provider Selection -->
        <item>
-        <widget class="QGroupBox" name="providerGroup">
-         <property name="title">
-          <string>Provider</string>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Connection:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QComboBox" name="providerCombo"/>
-          </item>
-          <item>
-           <widget class="QPushButton" name="manageConnectionsButton">
-            <property name="text">
-             <string>Manage Connections...</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="collectionsGroup">
-         <property name="title">
-          <string>Collections</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
-          <item>
-           <widget class="QListWidget" name="collectionList">
-            <property name="selectionMode">
-             <enum>QAbstractItemView::MultiSelection</enum>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="filtersGroup">
-         <property name="title">
-          <string>Filters</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_2">
-            <property name="text">
-             <string>Start Date:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QDateEdit" name="startDateEdit">
-            <property name="calendarPopup">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_3">
-            <property name="text">
-             <string>End Date:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QDateEdit" name="endDateEdit">
-            <property name="calendarPopup">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_4">
-            <property name="text">
-             <string>Cloud Cover (%):</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
-            <item>
-             <widget class="QSlider" name="cloudCoverSlider">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="cloudCoverLabel">
-              <property name="text">
-               <string>30%</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string>Result Limit:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QSpinBox" name="limitSpinBox"/>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="bboxGroup">
-         <property name="title">
-          <string>Bounding Box</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string>West:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="bboxWestEdit"/>
-          </item>
-          <item row="0" column="2">
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>South:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="3">
-           <widget class="QLineEdit" name="bboxSouthEdit"/>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_8">
-            <property name="text">
-             <string>East:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="bboxEastEdit"/>
-          </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_9">
-            <property name="text">
-             <string>North:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="3">
-           <widget class="QLineEdit" name="bboxNorthEdit"/>
-          </item>
-          <item row="2" column="0" colspan="4">
-           <layout class="QHBoxLayout" name="horizontalLayout_3">
-            <item>
-             <widget class="QPushButton" name="useBBoxButton">
-              <property name="text">
-               <string>Use Canvas Extent</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="clearBBoxButton">
-              <property name="text">
-               <string>Clear</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <layout class="QHBoxLayout" name="providerLayout">
          <item>
-          <widget class="QPushButton" name="searchButton">
+          <widget class="QLabel" name="providerLabel">
            <property name="text">
-            <string>Search</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="resultsTab">
-      <attribute name="title">
-       <string>Results</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
-       <item>
-        <widget class="QTableWidget" name="resultsTable">
-         <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectRows</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <item>
-          <widget class="QPushButton" name="loadSelectedButton">
-           <property name="text">
-            <string>Load Selected Item</string>
+            <string>Provider:</string>
            </property>
           </widget>
          </item>
          <item>
-          <spacer name="horizontalSpacer_2">
+          <widget class="QComboBox" name="providerCombo">
+           <property name="layoutDirection">
+            <enum>Qt::RightToLeft</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="manageConnectionsButton">
+           <property name="layoutDirection">
+            <enum>Qt::RightToLeft</enum>
+           </property>
+           <property name="text">
+            <string>Manage Connections</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="providerSpacer">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
            </property>
           </spacer>
          </item>
         </layout>
        </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="assetsTab">
-      <attribute name="title">
-       <string>Assets</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_5">
+       
+       <!-- Collections Header with Search Box -->
        <item>
-        <widget class="QLabel" name="itemIdLabel">
-         <property name="text">
-          <string>Item ID: None</string>
+        <layout class="QHBoxLayout" name="collectionsHeaderLayout">
+         <item>
+          <widget class="QLabel" name="collectionsLabel">
+           <property name="text">
+            <string>Collections:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="collectionSearchEdit">
+           <property name="maximumSize">
+            <size>
+             <width>200</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="layoutDirection">
+            <enum>Qt::RightToLeft</enum>
+           </property>
+           <property name="placeholderText">
+            <string>Search collections...</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="collectionSearchSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       
+       <!-- Collections List -->
+       <item>
+        <widget class="QListWidget" name="collectionList">
+         <property name="selectionMode">
+          <enum>QAbstractItemView::MultiSelection</enum>
          </property>
-         <property name="styleSheet">
-          <string notr="true">font-weight: bold;</string>
+        </widget>
+       </item>
+       
+       <!-- Bounding Box Section -->
+       <item>
+        <widget class="QLabel" name="bboxLabel">
+         <property name="text">
+          <string>Bounding Box (WGS84):</string>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
-         <item>
-          <widget class="QLabel" name="label_10">
+        <layout class="QGridLayout" name="bboxLayout">
+         <!-- West Coordinate -->
+         <item row="0" column="0">
+          <widget class="QLabel" name="westLabel">
            <property name="text">
-            <string>Filter by Type:</string>
+            <string>West:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="bboxWestEdit">
+           <property name="placeholderText">
+            <string>-180.0</string>
+           </property>
+          </widget>
+         </item>
+         
+         <!-- East Coordinate -->
+         <item row="0" column="2">
+          <widget class="QLabel" name="eastLabel">
+           <property name="text">
+            <string>East:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QLineEdit" name="bboxEastEdit">
+           <property name="placeholderText">
+            <string>180.0</string>
+           </property>
+          </widget>
+         </item>
+         
+         <!-- South Coordinate -->
+         <item row="1" column="0">
+          <widget class="QLabel" name="southLabel">
+           <property name="text">
+            <string>South:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="bboxSouthEdit">
+           <property name="placeholderText">
+            <string>-90.0</string>
+           </property>
+          </widget>
+         </item>
+         
+         <!-- North Coordinate -->
+         <item row="1" column="2">
+          <widget class="QLabel" name="northLabel">
+           <property name="text">
+            <string>North:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="3">
+          <widget class="QLineEdit" name="bboxNorthEdit">
+           <property name="placeholderText">
+            <string>90.0</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       
+       <!-- Bounding Box Buttons -->
+       <item>
+        <layout class="QHBoxLayout" name="bboxButtonLayout">
+         <item>
+          <widget class="QPushButton" name="useBBoxButton">
+           <property name="text">
+            <string>Use Map Extent</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="clearBBoxButton">
+           <property name="text">
+            <string>Clear</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="bboxSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       
+       <!-- Date Range Section -->
+       <item>
+        <widget class="QLabel" name="dateLabel">
+         <property name="text">
+          <string>Date Range:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="dateLayout">
+         <item>
+          <widget class="QLabel" name="startDateLabel">
+           <property name="text">
+            <string>Start:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDateEdit" name="startDateEdit">
+           <property name="calendarPopup">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="endDateLabel">
+           <property name="text">
+            <string>End:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDateEdit" name="endDateEdit">
+           <property name="calendarPopup">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       
+       <!-- Cloud Cover Slider -->
+       <item>
+        <layout class="QHBoxLayout" name="cloudLayout">
+         <item>
+          <widget class="QLabel" name="cloudCoverTextLabel">
+           <property name="text">
+            <string>Max Cloud Cover:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSlider" name="cloudCoverSlider">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="cloudCoverLabel">
+           <property name="text">
+            <string>30%</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       
+       <!-- Result Limit -->
+       <item>
+        <layout class="QHBoxLayout" name="limitLayout">
+         <item>
+          <widget class="QLabel" name="limitLabel">
+           <property name="text">
+            <string>Result Limit:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="limitSpinBox"/>
+         </item>
+         <item>
+          <spacer name="limitSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       
+       <!-- Search Button -->
+       <item>
+        <widget class="QPushButton" name="searchButton">
+         <property name="text">
+          <string>Search</string>
+         </property>
+        </widget>
+       </item>
+       
+       <!-- Status Label -->
+       <item>
+        <widget class="QLabel" name="statusLabel">
+         <property name="text">
+          <string>Ready</string>
+         </property>
+        </widget>
+       </item>
+       
+      </layout>
+     </widget>
+     
+     <!-- ========================================== -->
+     <!-- TAB 2: RESULTS -->
+     <!-- ========================================== -->
+     <widget class="QWidget" name="resultsTab">
+      <attribute name="title">
+       <string>Results</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="resultsLayout">
+       
+       <!-- Results Table -->
+       <item>
+        <widget class="QTableWidget" name="resultsTable">
+         <property name="selectionMode">
+          <enum>QAbstractItemView::MultiSelection</enum>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+        </widget>
+       </item>
+       
+       <!-- Load Selected Items Button -->
+       <item>
+        <widget class="QPushButton" name="loadSelectedButton">
+         <property name="text">
+          <string>Load Selected Item</string>
+         </property>
+        </widget>
+       </item>
+       
+      </layout>
+     </widget>
+     
+     <!-- ========================================== -->
+     <!-- TAB 3: ASSETS -->
+     <!-- ========================================== -->
+     <widget class="QWidget" name="assetsTab">
+      <attribute name="title">
+       <string>Assets</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="assetsLayout">
+       
+       <!-- Item ID Label -->
+       <item>
+        <widget class="QLabel" name="itemIdLabel">
+         <property name="text">
+          <string>Item ID:</string>
+         </property>
+        </widget>
+       </item>
+       
+       <!-- File Type Filter -->
+       <item>
+        <layout class="QHBoxLayout" name="fileTypeLayout">
+         <item>
+          <widget class="QLabel" name="fileTypeLabel">
+           <property name="text">
+            <string>File Type:</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QComboBox" name="fileTypeCombo">
+           <!-- All Files -->
            <item>
             <property name="text">
              <string>All</string>
             </property>
            </item>
+           <!-- Raster Formats -->
            <item>
             <property name="text">
-             <string>.tif / .tiff</string>
+             <string>.tif / .tiff (GeoTIFF)</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>.jp2</string>
+             <string>.jp2 (JPEG2000)</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>.jpg / .jpeg</string>
+             <string>.jpg / .jpeg (JPEG)</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>.png</string>
+             <string>.png (PNG)</string>
+            </property>
+           </item>
+           <!-- Metadata Formats -->
+           <item>
+            <property name="text">
+             <string>.json (JSON)</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>.xml</string>
+             <string>.xml (XML)</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>.json</string>
+             <string>.safe (SAFE - XML)</string>
+            </property>
+           </item>
+           <!-- Scientific Formats -->
+           <item>
+            <property name="text">
+             <string>.h5 / .hdf (HDF5)</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>.nc (NetCDF)</string>
             </property>
            </item>
           </widget>
          </item>
          <item>
-          <spacer name="horizontalSpacer_3">
+          <spacer name="fileTypeSpacer">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
            </property>
           </spacer>
          </item>
         </layout>
        </item>
+       
+       <!-- Assets Table -->
        <item>
-        <widget class="QTableWidget" name="assetsTable">
-         <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectRows</enum>
+        <widget class="QTableWidget" name="assetsTable"/>
+       </item>
+       
+       <!-- Load to QGIS Button -->
+       <item>
+        <widget class="QPushButton" name="loadAssetButton">
+         <property name="text">
+          <string>Load to QGIS</string>
+         </property>
+        </widget>
+       </item>
+       
+       <!-- Download Path Section -->
+       <item>
+        <widget class="QLabel" name="downloadLabel">
+         <property name="text">
+          <string>Download Path:</string>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QGridLayout" name="gridLayout_3">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_11">
-           <property name="text">
-            <string>Download Path:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
+        <layout class="QHBoxLayout" name="downloadPathLayout">
+         <item>
           <widget class="QLineEdit" name="downloadPathEdit"/>
          </item>
-         <item row="0" column="2">
+         <item>
           <widget class="QPushButton" name="browseButton">
            <property name="text">
             <string>Browse...</string>
@@ -357,15 +525,10 @@
          </item>
         </layout>
        </item>
+       
+       <!-- Download Buttons -->
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_7">
-         <item>
-          <widget class="QPushButton" name="loadAssetButton">
-           <property name="text">
-            <string>Load to QGIS</string>
-           </property>
-          </widget>
-         </item>
+        <layout class="QHBoxLayout" name="downloadButtonLayout">
          <item>
           <widget class="QPushButton" name="downloadButton">
            <property name="text">
@@ -376,32 +539,21 @@
          <item>
           <widget class="QPushButton" name="downloadStructuredButton">
            <property name="text">
-            <string>Download with Structure</string>
+            <string>Download (Structured)</string>
            </property>
           </widget>
          </item>
-         <item>
-          <spacer name="horizontalSpacer_4">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </spacer>
-         </item>
         </layout>
        </item>
+       
       </layout>
      </widget>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="statusLabel">
-     <property name="text">
-      <string>Ready</string>
-     </property>
+     
     </widget>
    </item>
   </layout>
  </widget>
+ 
  <resources/>
  <connections/>
 </ui>

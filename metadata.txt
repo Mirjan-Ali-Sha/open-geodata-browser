@@ -1,19 +1,46 @@
 [general]
 name=Open Geodata Browser
-qgisMinimumVersion=3.0
+qgisMinimumVersion=3.16
 qgisMaximumVersion=3.99
-description=Browse and access satellite imagery from multiple providers using Open-Geodata-API
-version=1.0.0
+description=Browse and download satellite imagery from STAC-compliant catalogs (Planetary Computer, AWS Earth Search, custom endpoints)
+version=1.1.5
 author=Mirjan Ali Sha
 email=mastools.help@gmail.com
 
-about=Open Geodata Browser provides seamless access to Microsoft Planetary Computer and AWS EarthSearch satellite data catalogs. Search, filter, and load Cloud-Optimized GeoTIFFs directly into QGIS. Features include multi-provider comparison, advanced filtering, batch downloads, and automatic URL signing.
+about=Open Geodata Browser is a powerful QGIS plugin for accessing satellite imagery from leading STAC data providers. Seamlessly search, filter, and load Cloud-Optimized GeoTIFFs and other geospatial data directly into QGIS with advanced spatial-temporal filtering and batch download capabilities.
+
+    INSTALL DEPENDENCY:
+    ===================
+    Plugins > Python Console
+    Copy & Paste:
+    import subprocess, sys
+    subprocess.run([sys.executable, '-m', 'pip', 'install', '--user', 'open-geodata-api'])
+    Restart QGIS
+
+    QUICK START:
+    ============
+    1. Open: Raster > Open Geodata Browser
+    2. Select STAC provider (Planetary Computer, Sentinel Hub, NASA EOSDIS)
+    3. Draw area or import vector layer as AOI
+    4. Set date range and cloud cover filter
+    5. Click Search
+    6. Download - automatically loaded to QGIS
+
+    FEATURES:
+    =========
+    Multi-provider STAC access | Advanced spatial-temporal search | Batch download | Cloud-Optimized GeoTIFFs | Auto-load to project | Interactive map | Custom STAC endpoints
+
+    REQUIREMENTS:
+    =============
+    QGIS 3.28+ | Python 3.9+ | Internet | 20MB disk | 2GB RAM
+
 
 tracker=https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues
 repository=https://github.com/Mirjan-Ali-Sha/open-geodata-browser
 homepage=https://github.com/Mirjan-Ali-Sha/open-geodata-browser/wiki
+help=https://github.com/Mirjan-Ali-Sha/open-geodata-browser
 
-tags=satellite,stac,remote sensing,imagery,raster,planetary computer,earthsearch,cloud,cog
+tags=satellite,stac,remote-sensing,imagery,raster,planetary-computer,earthsearch,cog,geospatial,data-discovery
 
 category=Raster
 
@@ -21,19 +48,20 @@ icon=resources/icon.png
 
 experimental=False
 deprecated=False
+server=False
 
 changelog=
-    1.0.0 - Initial release
-    - Multi-provider search (Planetary Computer & EarthSearch)
-    - Advanced filtering (cloud cover, date range, bbox)
-    - Direct COG loading to QGIS
-    - Batch download capabilities
-    - Asset preview and management
-
-hasProcessingProvider=no
-
-# Python package dependencies
-plugin_dependencies=
-
-# External dependencies (users need to install manually or via pip)
-# open-geodata-api>=1.0.0
+    1.0.1 (November 2025)
+    - Fixed dependency installation
+    - Improved UI path handling
+    - Removed stuck plugin dependencies dialog
+    - Better error handling and logging
+    
+    1.0.0 (October 2025) - Initial release
+    - Multi-provider STAC support
+    - Advanced spatial/temporal filtering
+    - Direct QGIS layer loading
+    - Batch download functionality
+    - Asset management and preview
+    - Interactive map visualization
+    - Connection management for custom endpoints

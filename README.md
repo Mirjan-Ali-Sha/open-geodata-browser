@@ -60,5 +60,3 @@ GPL v3
 ## Author
 
 Mirjan Ali Sha (mastools.help@gmail.com)
-
-

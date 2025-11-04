@@ -77,6 +77,64 @@ class LayerLoader:
             )
             raise
 
+    def load_asset(self, asset, asset_key, item_id):
+        """Load a STAC asset to QGIS
+        
+        Args:
+            asset: STACAsset object
+            asset_key: Asset key/name
+            item_id: Item identifier
+        """
+        try:
+            # Get href
+            href = asset.href if hasattr(asset, 'href') else None
+            
+            if not href:
+                raise Exception(f'No href available for asset {asset_key}')
+            
+            # Determine asset type
+            asset_type = asset.type if hasattr(asset, 'type') else ''
+            
+            # Build layer name
+            layer_name = f"{item_id}_{asset_key}"
+            
+            # Try to load as raster first
+            if any(t in asset_type.lower() for t in ['tiff', 'geotiff', 'jp2', 'jpeg', 'png', 'image']):
+                layer = QgsRasterLayer(href, layer_name, 'gdal')
+                
+                if layer.isValid():
+                    QgsProject.instance().addMapLayer(layer)
+                    self.iface.messageBar().pushMessage(
+                        'Success', f'Loaded {layer_name}', Qgis.Success, 3
+                    )
+                    return True
+            
+            # Try to load as vector
+            if any(t in asset_type.lower() for t in ['json', 'geojson', 'vector']):
+                layer = QgsVectorLayer(href, layer_name, 'ogr')
+                
+                if layer.isValid():
+                    QgsProject.instance().addMapLayer(layer)
+                    self.iface.messageBar().pushMessage(
+                        'Success', f'Loaded {layer_name}', Qgis.Success, 3
+                    )
+                    return True
+            
+            # Generic attempt
+            layer = QgsRasterLayer(href, layer_name, 'gdal')
+            if not layer.isValid():
+                layer = QgsVectorLayer(href, layer_name, 'ogr')
+            
+            if layer.isValid():
+                QgsProject.instance().addMapLayer(layer)
+                return True
+            else:
+                raise Exception(f'Could not load asset as raster or vector')
+            
+        except Exception as e:
+            raise Exception(f'Failed to load asset {asset_key}: {str(e)}')
+
+
     def load_multiple_bands(self, item, asset_keys):
         """Load multiple bands from a single item
         

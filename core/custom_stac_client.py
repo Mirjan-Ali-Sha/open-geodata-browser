@@ -43,6 +43,45 @@ class CustomStacClient:
         else:
             return pystac_client.Client.open(url)
     
+    def get_collection_info(self, connection, collection_id):
+        """Get detailed information about a collection using open-geodata-api
+        
+        Args:
+            connection: Connection dictionary with 'url', 'username', 'password'
+            collection_id: Collection identifier
+            
+        Returns:
+            dict: Collection information
+        """
+        try:
+            import open_geodata_api as ogapi
+            
+            # Determine which client to use based on URL
+            url = connection['url'].lower()
+            
+            if 'planetarycomputer' in url:
+                # Use Planetary Computer client with auto-signing
+                client = ogapi.planetary_computer(auto_sign=True)
+            elif 'earth-search' in url or 'element84' in url:
+                # Use Earth Search client
+                client = ogapi.earth_search()
+            else:
+                # Use generic STAC client for custom endpoints
+                client = ogapi.stac(
+                    stac_endpoint=connection['url'],
+                    username=connection.get('username'),
+                    password=connection.get('password')
+                )
+            
+            # Get collection info
+            collection_info = client.get_collection_info(collection_id)
+            
+            return collection_info
+            
+        except Exception as e:
+            raise Exception(f'Failed to get collection info: {str(e)}')
+
+
     def list_collections(self, connection):
         """List collections from STAC API
         
@@ -64,55 +103,65 @@ class CustomStacClient:
             )
             return []
     
-    def search_items(self, connection, collections, bbox=None, 
-                     datetime=None, cloud_cover=None, limit=100):
-        """Search for items
+    def search_items(self, connection, collections, bbox, start_date, end_date, cloud_cover=100, limit=50):
+        """Search for STAC items using open-geodata-api
         
         Args:
-            connection (dict): Connection configuration
-            collections (list): Collection IDs
-            bbox (list): Bounding box [west, south, east, north]
-            datetime (str): Date range
-            cloud_cover (float): Maximum cloud cover
-            limit (int): Maximum results
+            connection: Connection dictionary
+            collections: List of collection IDs
+            bbox: Bounding box [west, south, east, north]
+            start_date: Start date string (YYYY-MM-DD)
+            end_date: End date string (YYYY-MM-DD)
+            cloud_cover: Maximum cloud cover percentage (default: 100)
+            limit: Maximum number of results (default: 50)
             
         Returns:
             list: List of STAC items
         """
         try:
-            client = self._get_client(connection)
+            import open_geodata_api as ogapi
             
-            # Build query
-            query = {}
-            if cloud_cover is not None:
-                query['eo:cloud_cover'] = {'lt': cloud_cover}
+            # Determine which client to use
+            url = connection['url'].lower()
             
-            # Execute search
-            search = client.search(
+            if 'planetarycomputer' in url:
+                client = ogapi.planetary_computer(auto_sign=True)
+            elif 'earth-search' in url or 'element84' in url:
+                client = ogapi.earth_search()
+            else:
+                client = ogapi.stac(
+                    stac_endpoint=connection['url'],
+                    username=connection.get('username'),
+                    password=connection.get('password')
+                )
+            
+            # Format datetime range
+            datetime_range = f"{start_date}T00:00:00Z/{end_date}T23:59:59Z"
+            
+            # Build query for cloud cover filter
+            query = {
+                "eo:cloud_cover": {
+                    "lt": cloud_cover
+                }
+            }
+            
+            # Search for items - returns STACSearch object
+            search_results = client.search(
                 collections=collections,
                 bbox=bbox,
-                datetime=datetime,
-                query=query if query else None,
+                datetime=datetime_range,
+                query=query,
                 limit=limit
             )
             
-            items = list(search.items())
-            
-            QgsMessageLog.logMessage(
-                f'Found {len(items)} items',
-                'Open Geodata Browser',
-                Qgis.Info
-            )
+            # Get all items from the search results
+            items = search_results.get_all_items()
             
             return items
             
         except Exception as e:
-            QgsMessageLog.logMessage(
-                f'Search failed: {str(e)}',
-                'Open Geodata Browser',
-                Qgis.Critical
-            )
-            raise
+            raise Exception(f'Search failed: {str(e)}')
+
     
     def download_asset(self, asset, destination):
         """Download an asset

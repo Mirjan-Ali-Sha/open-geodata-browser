@@ -1,291 +1,272 @@
+# -*- coding: utf-8 -*-
 """
-Main plugin class for Open Geodata Browser
+Open Geodata Browser
+QGIS Plugin for browsing and downloading satellite imagery from STAC APIs
 """
+
 import os
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QMessageBox, QPushButton, QProgressDialog
+from qgis.PyQt.QtWidgets import QAction, QToolBar, QMessageBox
 from qgis.core import QgsMessageLog, Qgis
-
-from .geodata_browser_dialog import GeodataBrowserDialog
 
 
 class GeodataBrowser:
-    """QGIS Plugin Implementation."""
-
+    """QGIS Plugin Implementation for Open Geodata Browser"""
+    
     def __init__(self, iface):
-        """Constructor.
-
-        Args:
-            iface (QgsInterface): An interface instance that will be passed to this class
-                which provides the hook by which you can manipulate the QGIS
-                application at run time.
-        """
+        """Constructor"""
         self.iface = iface
         self.plugin_dir = os.path.dirname(__file__)
         
-        # Initialize plugin directory
+        # Initialize locale
         locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
             self.plugin_dir,
             'i18n',
-            'GeodataBrowser_{}.qm'.format(locale))
-
+            f'GeodataBrowser_{locale}.qm'
+        )
+        
         if os.path.exists(locale_path):
             self.translator = QTranslator()
             self.translator.load(locale_path)
             QCoreApplication.installTranslator(self.translator)
-
-        # Declare instance attributes
+        
+        # Instance attributes
         self.actions = []
-        self.menu = self.tr('&Open Geodata Browser')
-        self.toolbar = self.iface.addToolBar('Open Geodata Browser')
-        self.toolbar.setObjectName('OpenGeodataBrowser')
-        
-        # Plugin dialog
+        self.menu = self.tr(u'MAS Raster Processing')
+        self.toolbar = None
         self.dlg = None
-        
-        self.log_message("Plugin initialized", Qgis.Info)
-
+        self.action = None
+        self.dependencies_checked = False
+        self.dependencies_ok = False
+    
     def tr(self, message):
-        """Get the translation for a string using Qt translation API."""
+        """Get translation"""
         return QCoreApplication.translate('GeodataBrowser', message)
-
-    def add_action(
-        self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
-        """Add a toolbar icon to the toolbar."""
-
+    
+    def add_action(self, icon_path, text, callback, enabled_flag=True,
+                   add_to_menu=True, add_to_toolbar=True, status_tip=None,
+                   whats_this=None, parent=None):
+        """Add toolbar icon"""
         icon = QIcon(icon_path)
         action = QAction(icon, text, parent)
         action.triggered.connect(callback)
         action.setEnabled(enabled_flag)
-
-        if status_tip is not None:
+        
+        if status_tip:
             action.setStatusTip(status_tip)
-
-        if whats_this is not None:
+        if whats_this:
             action.setWhatsThis(whats_this)
-
-        if add_to_toolbar:
+        
+        if add_to_toolbar and self.toolbar:
             self.toolbar.addAction(action)
-
+        
         if add_to_menu:
-            self.iface.addPluginToRasterMenu(
-                self.menu,
-                action)
-
+            self.iface.addPluginToRasterMenu(self.menu, action)
+        
         self.actions.append(action)
-
         return action
-
+    
     def initGui(self):
-        """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
+        """Create menu entries and toolbar icons"""
         icon_path = os.path.join(self.plugin_dir, 'resources', 'icon.png')
-        self.add_action(
+        
+        # Find or create toolbar
+        self.toolbar = self.iface.mainWindow().findChild(QToolBar, 'MASRasterProcessingToolbar')
+        if self.toolbar is None:
+            self.toolbar = self.iface.addToolBar(u'MAS Raster Processing')
+            self.toolbar.setObjectName('MASRasterProcessingToolbar')
+        
+        # Create action
+        self.action = self.add_action(
             icon_path,
-            text=self.tr('Open Geodata Browser'),
+            text=self.tr(u'Open Geodata Browser'),
             callback=self.run,
-            parent=self.iface.mainWindow())
-
+            status_tip=self.tr('Browse and download satellite imagery from STAC APIs'),
+            whats_this=self.tr('Access satellite imagery from multiple STAC providers'),
+            parent=self.iface.mainWindow()
+        )
+    
     def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
+        """Remove plugin menu and icon"""
         for action in self.actions:
-            self.iface.removePluginRasterMenu(
-                self.tr('&Open Geodata Browser'),
-                action)
-            self.iface.removeToolBarIcon(action)
-        del self.toolbar
-
+            self.iface.removePluginRasterMenu(self.tr(u'MAS Raster Processing'), action)
+            if self.toolbar:
+                self.toolbar.removeAction(action)
+    
     def run(self):
-        """Run method that performs all the real work"""
+        """Run plugin"""
+        # Check dependencies only once
+        if not self.dependencies_checked:
+            self.log_message('Checking dependencies...', Qgis.Info)
+            if not self.check_dependencies():
+                self.log_message('Dependencies check failed', Qgis.Warning)
+                return
+            
+            self.dependencies_checked = True
+            self.dependencies_ok = True
         
-        # Check dependencies
-        if not self.check_dependencies():
-            return
-        
-        # Create the dialog if it doesn't exist
+        # Create dialog
         if self.dlg is None:
-            self.dlg = GeodataBrowserDialog(self.iface)
+            try:
+                from .dialogs.geodata_browser_dialog import GeodataBrowserDialog
+                self.dlg = GeodataBrowserDialog(self.iface)
+            except ImportError as e:
+                self.log_message(f'Failed to import dialog: {str(e)}', Qgis.Critical)
+                QMessageBox.critical(
+                    self.iface.mainWindow(),
+                    'Import Error',
+                    f'Failed to load plugin dialog:\n{str(e)}'
+                )
+                return
         
-        # Show the dialog
+        # Show dialog
         self.dlg.show()
         self.dlg.raise_()
         self.dlg.activateWindow()
-
+    
     def check_dependencies(self):
-        """Check if required Python packages are installed"""
+        """Check if open-geodata-api is installed"""
         try:
             import open_geodata_api
+            self.log_message('✓ open-geodata-api is installed', Qgis.Success)
             return True
         except ImportError:
-            return self.show_dependency_dialog()
-
-    def show_dependency_dialog(self):
-        """Show dialog for missing dependencies with installation options"""
-        msg_box = QMessageBox(self.iface.mainWindow())
-        msg_box.setIcon(QMessageBox.Critical)
-        msg_box.setWindowTitle('Missing Dependencies')
-        msg_box.setText('<b>Open-Geodata-API is not installed.</b>')
+            self.log_message('✗ open-geodata-api is missing', Qgis.Warning)
+            return self.show_install_dialog()
+    
+    def show_install_dialog(self):
+        """Show dialog for installing open-geodata-api"""
+        msg = QMessageBox(self.iface.mainWindow())
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle('Missing Dependencies')
+        msg.setText('Open Geodata API Not Installed')
         
-        install_instructions = """
-<p>This plugin requires the <b>open-geodata-api</b> Python package.</p>
+        install_text = """The 'open-geodata-api' package is required but not installed.
 
-<p><b>Installation Methods:</b></p>
+This package provides access to satellite imagery from multiple STAC providers.
 
-<p><b>Method 1: OSGeo4W Shell (Recommended for Windows)</b><br>
-1. Close QGIS<br>
-2. Open <b>OSGeo4W Shell</b> as Administrator<br>
-3. Run: <code>python -m pip install open-geodata-api</code><br>
-4. Restart QGIS</p>
+INSTALLATION INSTRUCTIONS:
 
-<p><b>Method 2: QGIS Python Console</b><br>
-1. Open <b>Python Console</b> (Plugins → Python Console)<br>
-2. Run the following commands:<br>
-<code>import subprocess, sys</code><br>
-<code>subprocess.check_call([sys.executable, "-m", "pip", "install", "open-geodata-api"])</code><br>
-3. Restart QGIS</p>
+Method 1: QGIS Python Console (Recommended)
+1. Open Python Console (Plugins → Python Console)
+2. Copy and paste:
 
-<p><b>Method 3: Use Pip Manager Plugin</b><br>
-1. Install '<b>Pip Manager</b>' plugin from QGIS Plugin Repository<br>
-2. Use it to install '<b>open-geodata-api</b>'<br>
-3. Restart QGIS</p>
+from pip._internal.main import main as pip_main
+pip_main(['install', '--user', '--upgrade', 'open-geodata-api'])
+
+3. Restart QGIS
+
+Method 2: OSGeo4W Shell (Windows)
+1. Close QGIS
+2. Open OSGeo4W Shell as Administrator
+3. Run: python -m pip install --user open-geodata-api
+4. Restart QGIS
+
+Method 3: Command Line (Any System)
+pip install --user open-geodata-api
 """
         
-        msg_box.setInformativeText(install_instructions)
-        msg_box.setTextFormat(Qt.RichText)
+        msg.setInformativeText(install_text)
+        msg.setTextFormat(Qt.PlainText)
+        msg.setDetailedText('For more help: https://github.com/Mirjan-Ali-Sha/open-geodata-browser')
         
-        # Add custom buttons
-        install_button = msg_box.addButton('Install Now', QMessageBox.ActionRole)
-        cancel_button = msg_box.addButton('Cancel', QMessageBox.RejectRole)
-        help_button = msg_box.addButton('Copy Install Command', QMessageBox.HelpRole)
+        # Add buttons
+        try_now = msg.addButton('Try Install Now', QMessageBox.ActionRole)
+        cancel_btn = msg.addButton('Cancel', QMessageBox.RejectRole)
+        msg.setDefaultButton(cancel_btn)
         
-        msg_box.setDefaultButton(cancel_button)
+        msg.exec_()
+        clicked = msg.clickedButton()
         
-        result = msg_box.exec_()
-        clicked_button = msg_box.clickedButton()
-        
-        if clicked_button == install_button:
-            return self.install_dependencies_from_console()
-        elif clicked_button == help_button:
-            self.copy_install_command()
-            QMessageBox.information(
-                self.iface.mainWindow(),
-                'Command Copied',
-                'Installation command copied to clipboard.\n\n'
-                'Paste it in OSGeo4W Shell or QGIS Python Console.'
-            )
-            return False
+        if clicked == try_now:
+            return self.install_open_geodata_api()
         
         return False
-
-    def copy_install_command(self):
-        """Copy installation command to clipboard"""
-        from qgis.PyQt.QtWidgets import QApplication
-        command = 'import subprocess, sys\nsubprocess.check_call([sys.executable, "-m", "pip", "install", "open-geodata-api"])'
-        QApplication.clipboard().setText(command)
-
-    def install_dependencies_from_console(self):
-        """Attempt to install dependencies from within QGIS"""
+    
+    def install_open_geodata_api(self):
+        """Install open-geodata-api using subprocess with correct Python path"""
         try:
             import subprocess
             import sys
+            import os
             
-            # Show progress dialog
-            progress = QProgressDialog(
-                "Installing open-geodata-api and dependencies...\n\n"
-                "This may take several minutes depending on your internet connection.\n"
-                "Please do not close QGIS during installation.",
-                None, 0, 0, self.iface.mainWindow()
+            # Get QGIS Python executable (not sys.executable which is QGIS binary)
+            # Method 1: Try to find python.exe in QGIS bin directory
+            python_exe = None
+            
+            if sys.executable.lower().endswith('qgis-bin.exe'):
+                # We're in QGIS, find python.exe in the same directory
+                qgis_bin_dir = os.path.dirname(sys.executable)
+                python_candidate = os.path.join(qgis_bin_dir, 'python.exe')
+                if os.path.exists(python_candidate):
+                    python_exe = python_candidate
+            
+            # Method 2: Fallback to the current Python interpreter module
+            if not python_exe:
+                python_exe = sys.executable
+            
+            QMessageBox.information(
+                self.iface.mainWindow(),
+                'Installing Package',
+                f'Installing open-geodata-api...\n\n'
+                f'Using Python: {os.path.basename(python_exe)}\n'
+                'Please wait...'
             )
-            progress.setWindowModality(Qt.WindowModal)
-            progress.setWindowTitle("Installing Dependencies")
-            progress.setCancelButton(None)  # Disable cancel
-            progress.show()
             
-            # Force update the UI
-            from qgis.PyQt.QtWidgets import QApplication
-            QApplication.processEvents()
-            
-            self.log_message("Starting installation of open-geodata-api...", Qgis.Info)
-            
-            # Install package
+            # Use the correct Python executable for pip
             result = subprocess.run(
-                [sys.executable, "-m", "pip", "install", "open-geodata-api"],
+                [python_exe, '-m', 'pip', 'install', '--user', '--upgrade', 'open-geodata-api'],
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minutes timeout
+                timeout=300  # Increased timeout to 5 minutes
             )
             
-            progress.close()
-            
             if result.returncode == 0:
-                self.log_message("open-geodata-api installed successfully", Qgis.Success)
-                
+                self.log_message('✓ Successfully installed open-geodata-api', Qgis.Success)
                 QMessageBox.information(
                     self.iface.mainWindow(),
-                    'Installation Successful',
-                    '<b>open-geodata-api installed successfully!</b><br><br>'
-                    'Please <b>restart QGIS</b> for the changes to take effect.<br><br>'
-                    'After restarting, you can use the Open Geodata Browser plugin.'
+                    'Installation Complete',
+                    'Successfully installed open-geodata-api!\n\n'
+                    'Please RESTART QGIS to use the plugin.'
                 )
-                return False  # Return False to not load plugin yet (needs restart)
+                return True
             else:
-                error_msg = result.stderr if result.stderr else "Unknown error"
-                self.log_message(f"Installation failed: {error_msg}", Qgis.Critical)
-                
-                QMessageBox.critical(
+                error_output = result.stderr[:300] if result.stderr else result.stdout[:300]
+                self.log_message(f'✗ Installation failed: {error_output}', Qgis.Critical)
+                QMessageBox.warning(
                     self.iface.mainWindow(),
                     'Installation Failed',
-                    f'<b>Failed to install open-geodata-api</b><br><br>'
-                    f'<b>Error:</b><br><code>{error_msg}</code><br><br>'
-                    f'<b>Please try manual installation:</b><br>'
-                    f'1. Open OSGeo4W Shell as Administrator<br>'
-                    f'2. Run: <code>python -m pip install open-geodata-api</code><br>'
-                    f'3. Restart QGIS'
+                    f'Error:\n{error_output}\n\n'
+                    'Try installing manually:\n'
+                    'pip install --user open-geodata-api'
                 )
                 return False
-            
+        
         except subprocess.TimeoutExpired:
-            if 'progress' in locals():
-                progress.close()
-            
+            self.log_message('✗ Installation timed out', Qgis.Critical)
             QMessageBox.critical(
                 self.iface.mainWindow(),
                 'Installation Timeout',
-                'Installation timed out after 5 minutes.<br><br>'
-                'This might be due to slow internet connection.<br><br>'
-                'Please try manual installation using OSGeo4W Shell.'
+                'Installation took too long.\n\n'
+                'Install manually using:\n'
+                'pip install --user open-geodata-api'
             )
             return False
-            
+        
         except Exception as e:
-            if 'progress' in locals():
-                progress.close()
-            
-            self.log_message(f"Installation error: {str(e)}", Qgis.Critical)
-            
+            self.log_message(f'✗ Installation error: {str(e)}', Qgis.Critical)
             QMessageBox.critical(
                 self.iface.mainWindow(),
                 'Installation Error',
-                f'<b>An error occurred during installation:</b><br><br>'
-                f'<code>{str(e)}</code><br><br>'
-                f'<b>Please try manual installation:</b><br>'
-                f'1. Open OSGeo4W Shell as Administrator<br>'
-                f'2. Run: <code>python -m pip install open-geodata-api</code><br>'
-                f'3. Restart QGIS'
+                f'Error: {str(e)}\n\n'
+                'Install manually using:\n'
+                'pip install --user open-geodata-api'
             )
             return False
 
+    
     def log_message(self, message, level=Qgis.Info):
-        """Log message to QGIS message log"""
+        """Log message to QGIS"""
         QgsMessageLog.logMessage(message, 'Open Geodata Browser', level)
