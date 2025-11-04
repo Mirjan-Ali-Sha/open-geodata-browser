@@ -79,7 +79,7 @@ pip install open-geodata-api
 3. Click Install
 
 **Option B: From ZIP**
-1. Download latest release: [Releases](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/releases)
+1. Download latest release: [Releases](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/tree/main/releases)
 2. Plugins → Manage and Install Plugins → Install from ZIP
 3. Select downloaded file
 4. Enable plugin
@@ -483,4 +483,5 @@ GNUv3 License - see [LICENSE](LICENSE) file
 [Report Bug](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Request Feature](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Documentation](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/wiki)
 
 </div>
+
 
