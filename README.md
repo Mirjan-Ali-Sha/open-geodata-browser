@@ -90,7 +90,7 @@ pip install open-geodata-api
 ## 🚀 Quick Start
 
 ### 1. Open the Browser
-- **Raster** → **Open Geodata Browser**
+- **Raster** → **MAS Raster Processing** → **Open Geodata Browser**
 - Or click the toolbar icon 🌐
 
 ### 2. Select STAC Provider
@@ -483,6 +483,7 @@ GNUv3 License - see [LICENSE](LICENSE) file
 [Report Bug](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Request Feature](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Documentation](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/wiki)
 
 </div>
+
 
 
 
