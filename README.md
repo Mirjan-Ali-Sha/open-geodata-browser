@@ -18,15 +18,32 @@
 
 <div align="center">
 
+### Install Dependency (Windows OSGeo4W Shell):
+* Search for "OSGeo4W Shell" and follow the process below;
+Run `pip install open-geodata-api`
+<img src="https://github.com/Mirjan-Ali-Sha/open-geodata-browser/blob/main/assets/Install_dependancy.gif" width="600" alt="Installation Tutorial"/>
+
+</div>
+
+**For Other `OS` please follow the process below:**
+
+> 1. Open the terminal or Commandline
+> 2. Go to the QGIS Binary Path (`ls` to find Python or PIP executable)
+> 3. Run the command `pip install open-geodata-api`
+
+---
+
+<div align="center">
+
 ### Installation Guide
-<img src="assets/Installation.gif" width="600" alt="Installation Tutorial"/>
+<img src="https://github.com/Mirjan-Ali-Sha/open-geodata-browser/blob/main/assets/Installation.gif" width="600" alt="Installation Tutorial"/>
 
 *Learn how to install dependencies and set up the plugin*
 
 ---
 
 ### Download Imagery Tutorial
-<img src="assets/Imagery_Download.gif" width="600" alt="Download Tutorial"/>
+<img src="https://github.com/Mirjan-Ali-Sha/open-geodata-browser/blob/main/assets/Imagery_Download.gif" width="600" alt="Download Tutorial"/>
 
 *Discover how to search, filter, and download satellite imagery*
 
@@ -70,7 +87,15 @@ result = pip_main(['install', '--user', '--upgrade', 'open-geodata-api'])
 ```
 pip install open-geodata-api
 ```
-===
+
+
+#### Method 3: Terminal or Commandline tool (Other **OS**)
+1. Open the terminal or Commandline
+2. Go to the QGIS Binary Path (`ls` to find Python or PIP executable)
+3. Run `pip install open-geodata-api`
+
+---
+
 ### Plugin Installation
 
 **Option A: From QGIS Plugin Repository** (Coming Soon)
@@ -454,7 +479,7 @@ Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## 📜 License
 
-GNUv3 License - see [LICENSE](LICENSE) file
+GNUv3 License - see [LICENSE](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/blob/main/LICENSE) file
 
 ---
 
@@ -483,8 +508,3 @@ GNUv3 License - see [LICENSE](LICENSE) file
 [Report Bug](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Request Feature](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/issues) · [Documentation](https://github.com/Mirjan-Ali-Sha/open-geodata-browser/wiki)
 
 </div>
-
-
-
-
-
