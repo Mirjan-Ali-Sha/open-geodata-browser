@@ -1,197 +1,353 @@
 """
-Dependency installer for Open Geodata Browser plugin
-Handles package installation without spawning new QGIS instances
+Robust Dependency Installer for QGIS Plugins
+Correctly handles Python executable detection on Windows (OSGeo4W)
+
+Author: MAS Tools
 """
 
 import sys
 import os
 import subprocess
+from pathlib import Path
+
 from qgis.core import Qgis, QgsMessageLog
-from qgis.PyQt.QtWidgets import QMessageBox, QProgressDialog, QApplication
+from qgis.PyQt.QtWidgets import (
+    QMessageBox, QProgressDialog, QApplication, QDialog,
+    QVBoxLayout, QLabel, QPushButton, QTextEdit, QHBoxLayout
+)
 from qgis.PyQt.QtCore import Qt
 
 
 class DependencyInstaller:
-    """Handle installation of Python dependencies"""
+    """Handle installation of Python dependencies for QGIS plugins"""
     
-    def __init__(self, iface):
+    PLUGIN_NAME = "Open Geodata Browser"
+    
+    def __init__(self, iface, required_packages: dict):
+        """
+        Initialize the installer.
+        
+        Args:
+            iface: QGIS interface
+            required_packages: Dict of {pip_package_name: import_module_name}
+                e.g., {'open-geodata-api': 'open_geodata_api'}
+        """
         self.iface = iface
-        self.required_packages = {
-            'open-geodata-api': 'open_geodata_api',
-            'pystac-client': 'pystac_client',
-            'requests': 'requests'
-        }
+        self.required_packages = required_packages
+        self._python_exe = None
     
-    def check_dependencies(self):
-        """Check if all required packages are installed"""
+    def get_python_executable(self) -> str:
+        """
+        Get the actual Python executable path.
+        
+        On Windows QGIS, sys.executable points to qgis.exe, not python.exe.
+        This method finds the correct Python interpreter.
+        """
+        if self._python_exe:
+            return self._python_exe
+        
+        if os.name == 'nt':  # Windows
+            self._python_exe = self._find_windows_python()
+        else:  # Linux/macOS
+            self._python_exe = sys.executable
+        
+        self._log(f"Python executable: {self._python_exe}")
+        return self._python_exe
+    
+    def _find_windows_python(self) -> str:
+        """Find Python executable on Windows QGIS installation"""
+        
+        self._log(f"sys.executable = {sys.executable}")
+        self._log(f"OSGEO4W_ROOT = {os.environ.get('OSGEO4W_ROOT', 'NOT SET')}")
+        
+        # Method 1: Check OSGEO4W_ROOT environment variable
+        osgeo4w_root = os.environ.get('OSGEO4W_ROOT')
+        if osgeo4w_root:
+            self._log(f"Checking OSGEO4W_ROOT: {osgeo4w_root}")
+            # Try different Python versions (newest first)
+            for py_ver in ['Python312', 'Python311', 'Python310', 'Python39', 'Python38', 'Python37']:
+                python_path = os.path.join(osgeo4w_root, 'apps', py_ver, 'python.exe')
+                self._log(f"  Checking {python_path}: {os.path.exists(python_path)}")
+                if os.path.exists(python_path):
+                    self._log(f"Found Python via OSGEO4W_ROOT: {python_path}")
+                    return python_path
+        
+        # Method 2: Check PATH for QGIS Python
+        self._log("Checking PATH for QGIS Python...")
+        for path_dir in os.environ.get('PATH', '').split(os.pathsep):
+            if 'QGIS' in path_dir.upper() or 'OSGEO4W' in path_dir.upper():
+                python_path = os.path.join(path_dir, 'python.exe')
+                if os.path.exists(python_path):
+                    self._log(f"Found Python in PATH: {python_path}")
+                    return python_path
+        
+        # Method 3: Try to find from QGIS installation directory
+        qgis_dir = os.path.dirname(sys.executable)
+        self._log(f"QGIS directory: {qgis_dir}")
+        
+        possible_paths = [
+            os.path.join(qgis_dir, '..', 'apps', 'Python312', 'python.exe'),
+            os.path.join(qgis_dir, '..', 'apps', 'Python311', 'python.exe'),
+            os.path.join(qgis_dir, '..', 'apps', 'Python310', 'python.exe'),
+            os.path.join(qgis_dir, '..', 'apps', 'Python39', 'python.exe'),
+            os.path.join(qgis_dir, '..', 'apps', 'Python38', 'python.exe'),
+            os.path.join(qgis_dir, 'python.exe'),
+        ]
+        
+        for path in possible_paths:
+            normalized = os.path.normpath(path)
+            self._log(f"  Checking {normalized}: {os.path.exists(normalized)}")
+            if os.path.exists(normalized):
+                self._log(f"Found Python via QGIS dir: {normalized}")
+                return normalized
+        
+        # Method 4: Use python-qgis.bat wrapper if available
+        python_qgis_bat = os.path.join(qgis_dir, 'python-qgis.bat')
+        if os.path.exists(python_qgis_bat):
+            self._log(f"Found python-qgis.bat: {python_qgis_bat}")
+            return python_qgis_bat
+        
+        # Method 5: Look for python-qgis-ltr.bat 
+        python_qgis_ltr_bat = os.path.join(qgis_dir, 'python-qgis-ltr.bat')
+        if os.path.exists(python_qgis_ltr_bat):
+            self._log(f"Found python-qgis-ltr.bat: {python_qgis_ltr_bat}")
+            return python_qgis_ltr_bat
+        
+        # Fallback
+        self._log("WARNING: Could not find Python executable, falling back to sys.executable", Qgis.Warning)
+        return sys.executable
+
+    def _log(self, message: str, level=Qgis.Info):
+        """Log message to QGIS message log"""
+        QgsMessageLog.logMessage(message, self.PLUGIN_NAME, level)
+        print(f"[{self.PLUGIN_NAME}] {message}")
+    
+    def check_dependencies(self) -> list:
+        """Check which required packages are missing."""
         missing = []
         
         for package_name, import_name in self.required_packages.items():
             try:
                 __import__(import_name)
-                QgsMessageLog.logMessage(
-                    f'✓ {package_name} is installed',
-                    'Open Geodata Browser',
-                    Qgis.Info
-                )
+                self._log(f"✓ {package_name} is installed")
             except ImportError:
                 missing.append(package_name)
-                QgsMessageLog.logMessage(
-                    f'✗ {package_name} is missing',
-                    'Open Geodata Browser',
-                    Qgis.Warning
-                )
+                self._log(f"✗ {package_name} is missing", Qgis.Warning)
         
         return missing
     
-    def install_dependencies(self, missing_packages):
-        """Install missing packages with proper subprocess handling"""
+    def check_and_install(self, silent_if_ok: bool = True) -> bool:
+        """Check dependencies and prompt to install if missing."""
+        missing = self.check_dependencies()
         
-        # Show confirmation dialog
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Information)
-        msg.setWindowTitle('Install Dependencies')
-        msg.setText(f'The following packages need to be installed:\n\n' + 
-                   '\n'.join(f'• {pkg}' for pkg in missing_packages))
-        msg.setInformativeText('This will install packages using pip. Continue?')
-        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        msg.setDefaultButton(QMessageBox.Yes)
+        if not missing:
+            if not silent_if_ok:
+                self._log("All dependencies are installed", Qgis.Success)
+            return True
         
-        if msg.exec_() != QMessageBox.Yes:
+        return self._show_install_dialog(missing)
+    
+    def _show_install_dialog(self, missing_packages: list) -> bool:
+        """Show dialog to install missing packages"""
+        dialog = DependencyInstallDialog(
+            self.iface.mainWindow(),
+            missing_packages,
+            self.PLUGIN_NAME
+        )
+        
+        if dialog.exec_() != QDialog.Accepted:
             return False
         
-        # Create progress dialog
+        return self._install_packages(missing_packages)
+    
+    def _install_packages(self, packages: list) -> bool:
+        """Install packages using pip"""
+        python_exe = self.get_python_executable()
+        
+        if not os.path.exists(python_exe):
+            QMessageBox.critical(
+                self.iface.mainWindow(),
+                "Installation Error",
+                f"Python executable not found at:\n{python_exe}\n\n"
+                "Please install dependencies manually using OSGeo4W Shell:\n"
+                f"pip install {' '.join(packages)}"
+            )
+            return False
+        
         progress = QProgressDialog(
-            'Installing dependencies...',
-            'Cancel',
-            0,
-            len(missing_packages),
+            "Installing dependencies...",
+            "Cancel",
+            0, len(packages),
             self.iface.mainWindow()
         )
+        progress.setWindowTitle("Installing Dependencies")
         progress.setWindowModality(Qt.WindowModal)
-        progress.setAutoClose(True)
+        progress.setAutoClose(False)
         progress.show()
         
         success_count = 0
         failed_packages = []
+        error_messages = []
         
-        for i, package in enumerate(missing_packages):
+        for i, package in enumerate(packages):
             if progress.wasCanceled():
                 break
             
             progress.setValue(i)
-            progress.setLabelText(f'Installing {package}...')
+            progress.setLabelText(f"Installing {package}...")
             QApplication.processEvents()
             
-            if self.install_package(package):
+            success, error = self._install_single_package(python_exe, package)
+            if success:
                 success_count += 1
+                self._log(f"✓ Successfully installed {package}", Qgis.Success)
             else:
                 failed_packages.append(package)
+                error_messages.append(f"{package}: {error}")
+                self._log(f"✗ Failed to install {package}: {error}", Qgis.Critical)
         
-        progress.setValue(len(missing_packages))
+        progress.setValue(len(packages))
         progress.close()
         
-        # Show results
         if failed_packages:
-            QMessageBox.warning(
-                self.iface.mainWindow(),
-                'Installation Incomplete',
-                f'Successfully installed: {success_count}/{len(missing_packages)}\n\n'
-                f'Failed to install:\n' + '\n'.join(f'• {pkg}' for pkg in failed_packages) +
-                '\n\nPlease install manually using:\n'
-                f'pip install --user {" ".join(failed_packages)}'
-            )
+            self._show_failure_dialog(failed_packages, error_messages)
             return False
         else:
-            QMessageBox.information(
-                self.iface.mainWindow(),
-                'Installation Complete',
-                f'Successfully installed all {success_count} packages!\n\n'
-                'Please restart QGIS to use the plugin.'
-            )
+            self._show_success_dialog(success_count)
             return True
     
-    def install_package(self, package_name):
-        """Install a single package using subprocess correctly"""
+    def _install_single_package(self, python_exe: str, package: str) -> tuple:
+        """Install a single package."""
         try:
-            # Get Python executable from QGIS
-            python_exe = sys.executable
-            
-            QgsMessageLog.logMessage(
-                f'Installing {package_name} using {python_exe}',
-                'Open Geodata Browser',
-                Qgis.Info
-            )
-            
-            # CRITICAL: Pass command as a LIST, not a string
-            # This prevents the arguments from being interpreted as file paths
             cmd = [
                 python_exe,
-                '-m',
-                'pip',
+                '-m', 'pip',
                 'install',
                 '--user',
                 '--upgrade',
-                package_name
+                package
             ]
             
-            # Run subprocess with proper settings
+            self._log(f"Running: {' '.join(cmd)}")
+            
+            creationflags = 0
+            if os.name == 'nt':
+                creationflags = subprocess.CREATE_NO_WINDOW
+            
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=300,  # 5 minute timeout
-                check=False,  # Don't raise exception on non-zero exit
-                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
+                timeout=300,
+                creationflags=creationflags
             )
             
-            # Check result
             if result.returncode == 0:
-                QgsMessageLog.logMessage(
-                    f'✓ Successfully installed {package_name}',
-                    'Open Geodata Browser',
-                    Qgis.Success
-                )
-                return True
+                return True, ""
             else:
-                QgsMessageLog.logMessage(
-                    f'✗ Failed to install {package_name}\n'
-                    f'Error: {result.stderr}',
-                    'Open Geodata Browser',
-                    Qgis.Critical
-                )
-                return False
+                return False, result.stderr or result.stdout or "Unknown error"
                 
         except subprocess.TimeoutExpired:
-            QgsMessageLog.logMessage(
-                f'✗ Installation of {package_name} timed out',
-                'Open Geodata Browser',
-                Qgis.Critical
-            )
-            return False
+            return False, "Installation timed out (5 minutes)"
+        except FileNotFoundError:
+            return False, f"Python executable not found: {python_exe}"
         except Exception as e:
-            QgsMessageLog.logMessage(
-                f'✗ Error installing {package_name}: {str(e)}',
-                'Open Geodata Browser',
-                Qgis.Critical
-            )
-            return False
-
-
-def check_and_install_dependencies(iface):
-    """Main function to check and install dependencies"""
-    installer = DependencyInstaller(iface)
+            return False, str(e)
     
-    # Check for missing packages
-    missing = installer.check_dependencies()
-    
-    if not missing:
-        QgsMessageLog.logMessage(
-            'All dependencies are installed',
-            'Open Geodata Browser',
-            Qgis.Success
+    def _show_success_dialog(self, count: int):
+        """Show success message"""
+        QMessageBox.information(
+            self.iface.mainWindow(),
+            "Installation Complete",
+            f"Successfully installed {count} package(s)!\n\n"
+            "The plugin is now ready to use."
         )
-        return True
     
-    # Install missing packages
-    return installer.install_dependencies(missing)
+    def _show_failure_dialog(self, failed: list, errors: list):
+        """Show detailed failure dialog"""
+        dialog = QDialog(self.iface.mainWindow())
+        dialog.setWindowTitle("Installation Failed")
+        dialog.setMinimumWidth(500)
+        
+        layout = QVBoxLayout(dialog)
+        
+        header = QLabel(f"Failed to install {len(failed)} package(s):")
+        header.setStyleSheet("font-weight: bold; color: #c0392b;")
+        layout.addWidget(header)
+        
+        error_text = QTextEdit()
+        error_text.setReadOnly(True)
+        error_text.setPlainText("\n\n".join(errors))
+        error_text.setMaximumHeight(150)
+        layout.addWidget(error_text)
+        
+        manual_label = QLabel(
+            "<b>To install manually:</b><br>"
+            "1. Open <b>OSGeo4W Shell</b> from Start Menu<br>"
+            "2. Run the following command:"
+        )
+        layout.addWidget(manual_label)
+        
+        cmd_text = QTextEdit()
+        cmd_text.setReadOnly(True)
+        cmd_text.setPlainText(f"pip install --user {' '.join(failed)}")
+        cmd_text.setMaximumHeight(40)
+        cmd_text.setStyleSheet("font-family: Consolas, monospace; background: #f5f5f5;")
+        layout.addWidget(cmd_text)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        ok_btn = QPushButton("OK")
+        ok_btn.clicked.connect(dialog.accept)
+        btn_layout.addWidget(ok_btn)
+        layout.addLayout(btn_layout)
+        
+        dialog.exec_()
+
+
+class DependencyInstallDialog(QDialog):
+    """Dialog to confirm dependency installation"""
+    
+    def __init__(self, parent, packages: list, plugin_name: str):
+        super().__init__(parent)
+        self.setWindowTitle(f"{plugin_name} - Missing Dependencies")
+        self.setMinimumWidth(450)
+        
+        layout = QVBoxLayout(self)
+        
+        header = QLabel(
+            f"<h3>📦 Missing Dependencies</h3>"
+            f"<p>The <b>{plugin_name}</b> plugin requires the following "
+            f"Python packages to be installed:</p>"
+        )
+        layout.addWidget(header)
+        
+        packages_html = "<ul>" + "".join(f"<li><code>{pkg}</code></li>" for pkg in packages) + "</ul>"
+        pkg_label = QLabel(packages_html)
+        pkg_label.setStyleSheet("margin-left: 20px;")
+        layout.addWidget(pkg_label)
+        
+        note = QLabel(
+            "<p><small>This will install packages to your user directory using pip.<br>"
+            "The plugin will be ready to use immediately after installation.</small></p>"
+        )
+        note.setStyleSheet("color: #666;")
+        layout.addWidget(note)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
+        
+        install_btn = QPushButton("Install Now")
+        install_btn.setDefault(True)
+        install_btn.setStyleSheet(
+            "QPushButton { background-color: #3498db; color: white; padding: 8px 16px; }"
+            "QPushButton:hover { background-color: #2980b9; }"
+        )
+        install_btn.clicked.connect(self.accept)
+        btn_layout.addWidget(install_btn)
+        
+        layout.addLayout(btn_layout)
